@@ -120,25 +120,44 @@ def vectorize_and_classify(text, unseen_text, analyzer='char', n=3):
     print('< count_vectorizer >')
     count_vectorizer, X_train, X_test, y_train, y_test = \
     count_vectorize(text, analyzer, n)
+    
     nb_classifier, score, f1, confusion_mtrx = \
     train_naive_bayes(X_train, X_test, y_train, y_test)
     
     decode_naive_bayes(unseen_text, count_vectorizer, nb_classifier)
+    
+    print('>>> time taken:', (time.time()-start), '<<<\n')
+    start = time.time()
+
+    
+    svm_classifier, score, f1, confusion_mtrx = \
+    train_support_vector_machine(X_train, X_test, y_train, y_test)
+    
+    decode_support_vector_machine(unseen_text, count_vectorizer, svm_classifier)
+    
+    print('>>> time taken:', (time.time()-start), '<<<\n')
+    start = time.time()
 
     print('< tfidf_vectorizer >')
     tfidf_vectorizer, X_train, X_test, y_train, y_test = \
-    tfidf_vectorize(text, analyzer, n)    
+    tfidf_vectorize(text, analyzer, n)
+    
     nb_classifier, score, f1, confusion_mtrx = \
     train_naive_bayes(X_train, X_test, y_train, y_test)
     
     decode_naive_bayes(unseen_text, tfidf_vectorizer, nb_classifier)
     
-#    svm_classifier, score, f1, confusion_mtrx = \
-#    train_support_vector_machine(X_train, X_test, y_train, y_test)
+    print('>>> time taken:', (time.time()-start), '<<<\n')
+    start = time.time()
+    
+    svm_classifier, score, f1, confusion_mtrx = \
+    train_support_vector_machine(X_train, X_test, y_train, y_test)
+    
+    decode_support_vector_machine(unseen_text, tfidf_vectorizer, svm_classifier)
 
     print('>>> time taken:', (time.time()-start), '<<<\n')
     
-    return X_train, X_test, y_train, y_test, nb_classifier#, svm_classifier
+    return
  
 
 def train_naive_bayes(X_train, X_test, y_train, y_test):
@@ -148,7 +167,6 @@ def train_naive_bayes(X_train, X_test, y_train, y_test):
     nb_classifier = MultinomialNB()
     nb_classifier.fit(X_train, y_train)
     pred = nb_classifier.predict(X_test)
-#    probabilities = nb_classifier.predict_proba(count_test)
     
     score = metrics.accuracy_score(y_test, pred)
     print('accuracy:', score)
@@ -167,13 +185,8 @@ def decode_naive_bayes(unseen_text, vectorizer, nb_classifier):
     """
     print('* decode naive bayes *')
     y_test = unseen_text.language
-    ### Differing behavior depends on multiple factors in function call.
-#    unseen_vectorizer = vectorizer.fit_transform(unseen_text.sentence)
     unseen_vectorizer = vectorizer.transform(unseen_text.sentence)
-    ### To debug: function not outputting prediction for unseen text
-    ### ValueError: dimension mismatch
     pred = nb_classifier.predict(unseen_vectorizer)
-#    print('pred:', pred)
     
     score = metrics.accuracy_score(y_test, pred)
     print('accuracy:', score)
@@ -207,6 +220,26 @@ def train_support_vector_machine(X_train, X_test, y_train, y_test):
     return svm_classifier, score, f1, confusion_mtrx
 
 
+def decode_support_vector_machine(unseen_text, vectorizer, svm_classifier):
+    """
+    """
+    print('* decode support vector machine *')
+    y_test = unseen_text.language
+    unseen_vectorizer = vectorizer.transform(unseen_text.sentence)
+    pred = svm_classifier.predict(unseen_vectorizer)
+    
+    score = metrics.accuracy_score(y_test, pred)
+    print('accuracy:', score)
+    
+    f1 = metrics.f1_score(y_test, pred, average='weighted')
+    print('f1:', f1)    
+    
+    confusion_mtrx = metrics.confusion_matrix(y_test, pred, labels=[1, 0])
+    print(confusion_mtrx, '\n')
+
+    return svm_classifier, score, f1, confusion_mtrx
+
+
 def main():   
     """
     """
@@ -232,43 +265,6 @@ def main():
     vectorize_and_classify(text, unseen_text, analyzer='word', n=1)
     vectorize_and_classify(text, unseen_text, analyzer='word', n=2)
     vectorize_and_classify(text, unseen_text, analyzer='word', n=3)
- 
-### To debug: model combining 3 sets of features     
-    start = time.time()
-    ccount_vectorizer, cX_train, cX_test, cy_train, cy_test = \
-    count_vectorize(text, analyzer='char', n=4)
-    wcount_vectorizer, wX_train, wX_test, wy_train, wy_test = \
-    count_vectorize(text, analyzer='word', n=1)
-    tfidf_vectorizer, fX_train, fX_test, fy_train, fy_test = \
-    tfidf_vectorize(text, analyzer='char', n=3)
-    
-#    print('stacking features...')
-#    X_train = hstack([cX_train, wX_train, fX_train])
-#    X_test = hstack([cX_test, wX_test, fX_test])
-    
-    print('vectorizer')
-    model_char_vectorizer = CountVectorizer(decode_error='ignore', vocabulary=ccount_vectorizer.vocabulary_)
-    model_word_vectorizer = CountVectorizer(decode_error='ignore', vocabulary=wcount_vectorizer.vocabulary_)
-#    model_tfidf_vectorizer = TfidfVectorizer(decode_error='ignore', vocabulary=tfidf_vectorizer.vocabulary_)
-    
-    print('train nb')
-    cnb_classifier, score, f1, confusion_mtrx = train_naive_bayes(cX_train, cX_test, cy_train, cy_test)
-    wnb_classifier, score, f1, confusion_mtrx = train_naive_bayes(wX_train, wX_test, wy_train, wy_test)
-#    fnb_classifier, score, f1, confusion_mtrx = train_naive_bayes(fX_train, fX_test, fy_train, fy_test)
-#    nb_classifier, score, f1, confusion_mtrx = train_naive_bayes(X_train, X_test, y_train, y_test)
-#    print('train svm')
-#    train_support_vector_machine(X_train, X_test, y_train, y_test)
-    
-    print('decode')
-    print('char')
-    decode_naive_bayes(unseen_text, model_char_vectorizer, cnb_classifier)
-    print('word')
-    decode_naive_bayes(unseen_text, model_word_vectorizer, wnb_classifier)
-    ### To debug: error either in main or in decode_naive_bayes function
-    ### NotFittedError: idf vector is not fitted
-#    print('tfidf')
-#    decode_naive_bayes(unseen_text, model_tfidf_vectorizer, fnb_classifier)
-     
  
     print('>>> time taken:', (time.time()-start), '<<<\n')
 
