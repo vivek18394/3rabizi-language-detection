@@ -171,7 +171,7 @@ def train_naive_bayes(X_train, X_test, y_train, y_test):
     score = metrics.accuracy_score(y_test, pred)
     print('accuracy:', score)
     
-    f1 = metrics.f1_score(y_test, pred, average='weighted')
+    f1 = metrics.f1_score(y_test, pred)#, average='weighted')
     print('f1:', f1)    
     
     confusion_mtrx = metrics.confusion_matrix(y_test, pred, labels=[1, 0])
@@ -191,7 +191,7 @@ def decode_naive_bayes(unseen_text, vectorizer, nb_classifier):
     score = metrics.accuracy_score(y_test, pred)
     print('accuracy:', score)
     
-    f1 = metrics.f1_score(y_test, pred, average='weighted')
+    f1 = metrics.f1_score(y_test, pred)#, average='weighted')
     print('f1:', f1)    
     
     confusion_mtrx = metrics.confusion_matrix(y_test, pred, labels=[1, 0])
@@ -211,7 +211,7 @@ def train_support_vector_machine(X_train, X_test, y_train, y_test):
     score = metrics.accuracy_score(y_test, pred)
     print('accuracy:', score)
     
-    f1 = metrics.f1_score(y_test, pred, average='weighted')
+    f1 = metrics.f1_score(y_test, pred)#, average='weighted')
     print('f1:', f1)
     
     confusion_mtrx = metrics.confusion_matrix(y_test, pred, labels=[1, 0])
@@ -231,7 +231,7 @@ def decode_support_vector_machine(unseen_text, vectorizer, svm_classifier):
     score = metrics.accuracy_score(y_test, pred)
     print('accuracy:', score)
     
-    f1 = metrics.f1_score(y_test, pred, average='weighted')
+    f1 = metrics.f1_score(y_test, pred)#, average='weighted')
     print('f1:', f1)    
     
     confusion_mtrx = metrics.confusion_matrix(y_test, pred, labels=[1, 0])
