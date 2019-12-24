@@ -3,28 +3,26 @@
 
 import pandas as pd
 import re
-from scipy.sparse import hstack
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 from sklearn.model_selection import train_test_split
 from sklearn import metrics
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.svm import SVC
-import sys
 import time
 
 
 ar_corpus = 'corpora/arabizi-english-bitext.arz'
 ar_egy_corpus = 'corpora/arabizi-twitter-egy.csv'
-#ar_leb_corpus = 'corpora/arabizi-leb-small.csv'
 ar_leb_corpus = 'corpora/arabizi-twitter-leb.csv'
 en_corpus = 'corpora/arabizi-english-bitext.en'
 en_nltk_corpus = 'corpora/nltk_twitter_samples.csv'
-#en_twitter_corpus = 'corpora/arab_politics-small.txt'
 en_twitter_corpus = 'corpora/arab_politics_tweet.txt'
 
 
 def make_sentence_df(corpus, sep, header, target=None):
     """
+    Input corpus.
+    Output preprocessed dataframe.
     """
     if target != None:
         sentence_df = pd.read_csv(corpus, sep=sep, header=header, \
@@ -39,17 +37,22 @@ def make_sentence_df(corpus, sep, header, target=None):
         sentence_df['language'] = sentence_df['language'].astype(int)
 #    print(corpus, 'dtype:', sentence_df.language.dtype)
     
-    sentence_df['sentence'] = sentence_df['sentence'].map(lambda x:preprocess(x))
+    sentence_df['sentence'] = \
+    sentence_df['sentence'].map(lambda x:preprocess(x))
     
     return sentence_df
 
 
 def preprocess(sentence):
     """
+    Input sentence.
+    Output preprocessed sentence.
     """
     remove_reply_tweet = re.sub(r'RT @', '@', sentence)
     shorten = re.sub(r'(.)\1+', r'\1\1', remove_reply_tweet)
-    remove_misc = re.sub(r'(@[A-Za-z0-9]+)|(#[A-Za-z0-9]+)|([^0-9A-Za-z \t])|(\w+:\/\/\S+)', ' ', shorten)
+    remove_misc = \
+    re.sub(r'(@[A-Za-z0-9]+)|(#[A-Za-z0-9]+)|([^0-9A-Za-z \t])|(\w+:\/\/\S+)',\
+            ' ', shorten)
     remove_punc = re.sub(r'/[!@#$%^&*()-=_+|;:",.<>?]/', ' ', remove_misc)
     remove_large_num = re.sub(r'[0-9]{3,}', ' ', remove_punc)
     remove_solo_num = re.sub(r' [0-9]+ ', ' ', remove_large_num)
@@ -61,6 +64,8 @@ def preprocess(sentence):
 
 def combine_sentence_df(sentence_df1, sentence_df2):
     """
+    Input two preprocessed dataframes.
+    Output combined dataframe.
     """
     sentence_df = sentence_df1.append(sentence_df2, ignore_index=True)
     
@@ -69,6 +74,8 @@ def combine_sentence_df(sentence_df1, sentence_df2):
 
 def combine_texts(text1, text2, text3, text4, text5, text6):
     """
+    Input four training dataframes and two test dataframes.
+    Output one combined training dataframe and one combined test dataframe.
     """    
     texta = combine_sentence_df(text1, text2)
     textb = combine_sentence_df(texta, text3)
@@ -82,6 +89,8 @@ def combine_texts(text1, text2, text3, text4, text5, text6):
 
 def count_vectorize(text, analyzer='char', n=3):
     """
+    Input dataframe.
+    Output count vectorizer and train/test split.
     """
     print('analyzer:', analyzer, '<<<>>> n:', n)
     X_train, X_test, y_train, y_test = \
@@ -98,6 +107,8 @@ def count_vectorize(text, analyzer='char', n=3):
 
 def tfidf_vectorize(text, analyzer='char', n=3):
     """
+    Input dataframe.
+    Output tfidf vectorizer and train/test split.
     """
     print('analyzer:', analyzer, '<<<>>> n:', n) 
     X_train, X_test, y_train, y_test = \
@@ -114,6 +125,8 @@ def tfidf_vectorize(text, analyzer='char', n=3):
 
 def vectorize_and_classify(text, unseen_text, analyzer='char', n=3):
     """
+    Input training dataframe and test dataframe.
+    Print results of classification.
     """
     start = time.time()
     
@@ -129,11 +142,11 @@ def vectorize_and_classify(text, unseen_text, analyzer='char', n=3):
     print('>>> time taken:', (time.time()-start), '<<<\n')
     start = time.time()
 
-    
     svm_classifier, score, f1, confusion_mtrx = \
     train_support_vector_machine(X_train, X_test, y_train, y_test)
     
-    decode_support_vector_machine(unseen_text, count_vectorizer, svm_classifier)
+    decode_support_vector_machine(unseen_text, count_vectorizer, \
+                                  svm_classifier)
     
     print('>>> time taken:', (time.time()-start), '<<<\n')
     start = time.time()
@@ -153,7 +166,8 @@ def vectorize_and_classify(text, unseen_text, analyzer='char', n=3):
     svm_classifier, score, f1, confusion_mtrx = \
     train_support_vector_machine(X_train, X_test, y_train, y_test)
     
-    decode_support_vector_machine(unseen_text, tfidf_vectorizer, svm_classifier)
+    decode_support_vector_machine(unseen_text, tfidf_vectorizer, \
+                                  svm_classifier)
 
     print('>>> time taken:', (time.time()-start), '<<<\n')
     
@@ -162,6 +176,8 @@ def vectorize_and_classify(text, unseen_text, analyzer='char', n=3):
 
 def train_naive_bayes(X_train, X_test, y_train, y_test):
     """
+    Input train/test split.
+    Print results of naive bayes classification.
     """
     print('* train naive bayes *')
     nb_classifier = MultinomialNB()
@@ -176,12 +192,17 @@ def train_naive_bayes(X_train, X_test, y_train, y_test):
     
     confusion_mtrx = metrics.confusion_matrix(y_test, pred, labels=[1, 0])
     print(confusion_mtrx, '\n')
+    
+    print("\nReport:\n", metrics.classification_report(y_test, pred)) 
+
 
     return nb_classifier, score, f1, confusion_mtrx
 
 
 def decode_naive_bayes(unseen_text, vectorizer, nb_classifier):
     """
+    Input unseen test data, vectorizer, and trained naive bayes classifier.
+    Print results of naive bayes classification.
     """
     print('* decode naive bayes *')
     y_test = unseen_text.language
@@ -202,6 +223,8 @@ def decode_naive_bayes(unseen_text, vectorizer, nb_classifier):
 
 def train_support_vector_machine(X_train, X_test, y_train, y_test):
     """
+    Input train/test split.
+    Print results of support vector machine classification.
     """
     print('* train support vector machine *')
     svm_classifier = SVC(C=1.0, kernel='linear', degree=3, gamma='auto')
@@ -222,6 +245,9 @@ def train_support_vector_machine(X_train, X_test, y_train, y_test):
 
 def decode_support_vector_machine(unseen_text, vectorizer, svm_classifier):
     """
+    Input unseen test data, vectorizer, and trained support vector machine \
+    classifier.
+    Print results of support vector machine classification.
     """
     print('* decode support vector machine *')
     y_test = unseen_text.language
@@ -242,6 +268,11 @@ def decode_support_vector_machine(unseen_text, vectorizer, svm_classifier):
 
 def main():   
     """
+    Default files:
+        Two training data files for Arabizi
+        One test data file for Arabizi
+        Two training data files for English
+        One test data file for English
     """
     start = time.time()
     print('* import and preprocessing *')
